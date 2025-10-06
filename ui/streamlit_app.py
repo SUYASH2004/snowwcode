@@ -4,7 +4,7 @@ import requests
 import json
 
 # Backend API URL
-BACKEND_URL = "http://127.0.0.1:5000/api/explain"
+BACKEND_URL = "https://snowwcode.onrender.com"
 
 def main():
     st.title("🤖 Code Explainer Agent")
