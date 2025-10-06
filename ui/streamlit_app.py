@@ -3,11 +3,11 @@ import streamlit as st
 import requests
 import json
 
-# Backend API URL
+# Backend API URL - CORRECTED
 BACKEND_URL = "https://snowwcode.onrender.com"
 
 def main():
-    st.title("🤖 Code Explainer Agent")
+    st.title("🤖 SnowwCode Agent")
     st.write("Paste your code below and get AI-powered explanations!")
     
     # Code input
@@ -44,17 +44,27 @@ def main():
                     "level": explanation_level
                 }
                 
-                response = requests.post(BACKEND_URL, json=payload)
+                # CORRECT ENDPOINT
+                response = requests.post(f"{BACKEND_URL}/api/explain", json=payload, timeout=30)
+                
+                # Debug information
+                st.write(f"Status Code: {response.status_code}")
                 
                 if response.status_code == 200:
                     result = response.json()
                     display_explanation(result)
                 else:
-                    error_msg = response.json().get("error", "Unknown error")
-                    st.error(f"❌ Backend error: {error_msg}")
-                    
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get("error", "Unknown error")
+                        st.error(f"❌ Backend error: {error_msg}")
+                    except:
+                        st.error(f"❌ HTTP Error {response.status_code}: {response.text}")
+                        
+            except requests.exceptions.Timeout:
+                st.error("⏰ Request timed out. The backend might be starting up.")
             except requests.exceptions.ConnectionError:
-                st.error("🔌 Could not connect to backend. Make sure Flask server is running on http://127.0.0.1:5000")
+                st.error("🔌 Could not connect to backend. The service might be unavailable or starting.")
             except Exception as e:
                 st.error(f"💥 Unexpected error: {str(e)}")
 
@@ -64,7 +74,11 @@ def display_explanation(explanation_data):
     # Check if it's raw response or structured JSON
     if "raw_response" in explanation_data:
         st.warning("⚠️ Received raw response (not structured JSON)")
-        st.json(explanation_data["raw_response"])
+        st.write(explanation_data["raw_response"])
+        return
+    
+    if "error" in explanation_data:
+        st.error(f"❌ Error: {explanation_data['error']}")
         return
     
     # Structured response
